@@ -1,0 +1,221 @@
+openapi: 3.0.0
+info:
+  title: Photo Catalog API
+  version: 1.0.0
+  description: API для управления каталогом фотографий пользователей.
+servers:
+  - url: http://localhost:3000
+tags:
+  - name: users
+    description: "Всё, связанное с пользователями"
+  - name: photo
+    description: "Все, связанное с фотографиями"
+  - name: auth
+    description: "Все связанное с регистрацией и авторизацией"
+paths:
+  /api/v1/auth/register:
+    post:
+      tags:
+        - auth
+      summary: Регистрация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  maxLength: 20
+                  minLength: 4
+                email:
+                  type: string
+                  example: "example@mail.ru"
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+        '400':
+          description: Ошибка валидации данных
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - auth      
+      summary: Авторизация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Неверные учетные данные
+  /api/v1/users:
+    get:
+      tags:
+        - users    
+      summary: Получение всех пользователей
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /api/v1/users/{userId}:
+    get:
+      tags:
+        - users  
+      summary: Получение пользователя по ID
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+  /photos:
+  
+    post:
+      tags:
+        - photo      
+      summary: Создание фотографии
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+                  maxLength: 1000
+                location:
+                  type: object
+                  properties:
+                    latitude:
+                      type: number
+                      format: float
+                    longitude:
+                      type: number
+                      format: float
+      responses:
+        '201':
+          description: Фотография успешно загружена
+        '400':
+          description: Ошибка валидации данных
+
+  /photos/{photoId}:
+
+    put:
+      tags:
+        - photo 
+      summary: Обновление фотографии
+      parameters:
+        - in: path
+          name: photoId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  maxLength: 1000
+                location:
+                  type: object
+                  properties:
+                    latitude:
+                      type: number
+                      format: float
+                    longitude:
+                      type: number
+                      format: float
+      responses:
+        '200':
+          description: Фотография успешно обновлена
+        '404':
+          description: Фотография не найдена
+
+    delete:
+      tags:
+        - photo 
+      summary: Удаление фотографии
+      parameters:
+        - in: path
+          name: photoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Фотография успешно удалена
+        '404':
+          description: Фотография не найдена
+
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Photo:
+      type: object
+      properties:
+        photoId:
+          type: string
+        description:
+          type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              format: float
+            longitude:
+              type: number
+              format: float
