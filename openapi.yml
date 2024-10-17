@@ -11,7 +11,9 @@ tags:
   - name: photo
     description: "Все, связанное с фотографиями"
   - name: auth
-    description: "Все связанное с регистрацией и авторизацией"
+    description: "Все, связанное с регистрацией и авторизацией"
+  - name: likes
+    description: "Все, связанное с лайками" 
 paths:
   /api/v1/auth/register:
     post:
@@ -68,6 +70,7 @@ paths:
                     type: string
         '401':
           description: Неверные учетные данные
+
   /api/v1/users:
     get:
       tags:
@@ -103,71 +106,113 @@ paths:
                 $ref: '#/components/schemas/User'
         '404':
           description: Пользователь не найден
-  /photos:
-  
-    post:
+    delete:
       tags:
-        - photo      
-      summary: Создание фотографии
+        - users 
+      summary: Удалить друга
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
       requestBody:
         required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+      responses:
+        '204':
+          description: Друг успешно удален
+        '404':
+          description: Пользователь или друг не найден
+    patch:
+      tags:
+        - users 
+      summary: Обновить данные пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Профиль обновлен
+        '400':
+          description: Ошибка валидации данных
+
+  # Photo Service
+  /api/v1/photos:
+    post:
+      tags:
+        - photo
+      summary: Загрузить новую фотографию
+      requestBody:
         content:
           multipart/form-data:
             schema:
               type: object
               properties:
-                image:
+                file:
                   type: string
                   format: binary
-                description:
+                caption:
                   type: string
                   maxLength: 1000
                 location:
-                  type: object
-                  properties:
-                    latitude:
-                      type: number
-                      format: float
-                    longitude:
-                      type: number
-                      format: float
+                  type: string
       responses:
         '201':
           description: Фотография успешно загружена
         '400':
           description: Ошибка валидации данных
 
-  /photos/{photoId}:
+  /api/v1/photos/{photoId}:
+    get:
+      tags:
+        - photo
+      summary: Получить информацию о фотографии
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Фотография успешно получена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '404':
+          description: Фотография не найдена
 
     put:
       tags:
-        - photo 
-      summary: Обновление фотографии
+        - photo
+      summary: Обновить фотографию
       parameters:
-        - in: path
-          name: photoId
+        - name: photoId
+          in: path
           required: true
           schema:
-            type: string
+            type: integer
       requestBody:
-        required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              properties:
-                description:
-                  type: string
-                  maxLength: 1000
-                location:
-                  type: object
-                  properties:
-                    latitude:
-                      type: number
-                      format: float
-                    longitude:
-                      type: number
-                      format: float
+              $ref: '#/components/schemas/PhotoUpdate'
       responses:
         '200':
           description: Фотография успешно обновлена
@@ -176,19 +221,142 @@ paths:
 
     delete:
       tags:
-        - photo 
-      summary: Удаление фотографии
+        - photo
+      summary: Удалить фотографию
       parameters:
-        - in: path
-          name: photoId
+        - name: photoId
+          in: path
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         '204':
           description: Фотография успешно удалена
         '404':
           description: Фотография не найдена
+
+  /api/v1/likes:
+    post:
+      tags:
+        - likes
+      summary: Лайкнуть фотографию (доступно только для фотографий друзей)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photoId:
+                  type: integer
+      responses:
+        '201':
+          description: Фотография успешно лайкнута
+        '400':
+          description: Ошибка невозможно лайкнуть свою фотографию или не из списка друзей
+
+    delete:
+      tags:
+        - likes
+      summary: Убрать лайк (доступно только для фотографий друзей)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photoId:
+                  type: integer
+      responses:
+        '204':
+          description: Лайк успешно убран
+        '400':
+          description: Ошибка невозможно убрать лайк с фотографии не из списка друзей
+  /api/v1/likes/{photoId}:
+    get:
+      tags:
+        - users    
+      summary: Получение всех пользователей
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /api/v1/friends:
+    get:
+      summary: Получить список друзей пользователя
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (по умолчанию 1)
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          description: Количество друзей на странице (по умолчанию 10)
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Успешное получение списка друзей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  friends:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Friend'
+                  page:
+                    type: integer
+                  totalPages:
+                    type: integer
+        '401':
+          description: Пользователь не авторизован
+
+    post:
+      summary: Добавить друга
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                friendId:
+                  type: integer
+                  description: Идентификатор пользователя, которого нужно добавить в друзья
+      responses:
+        '201':
+          description: Друг успешно добавлен
+        '404':
+          description: Пользователь не найден
+        '400':
+          description: Невозможно добавить друга (возможно, уже в друзьях)
+
+  /api/v1/friends/{friendId}:
+    delete:
+      summary: Удалить друга
+      parameters:
+        - name: friendId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Друг успешно удален
+        '404':
+          description: Пользователь или друг не найден
 
 
 components:
@@ -196,13 +364,27 @@ components:
     User:
       type: object
       properties:
-        userId:
-          type: string
+        id:
+          type: integer
         username:
           type: string
-        createdAt:
+        email:
           type: string
-          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+    PhotoUpdate:
+      type: object
+      properties:
+        caption:
+          type: string
+        location:
+          type: string     
     Photo:
       type: object
       properties:
@@ -219,3 +401,17 @@ components:
             longitude:
               type: number
               format: float
+
+    Friend:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        addedAt:
+          type: string
+          format: date-time
+          description: Дата, когда пользователь был добавлен в друзья
