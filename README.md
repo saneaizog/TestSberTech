@@ -320,3 +320,6 @@ erDiagram
     Photo ||--o{ Like : "получает лайк"
     User ||--o{ Friendship : "является другом"
 ```
+
+## 3. Макеты 
+![Макеты](/Макетысайта.drawio.png)
