@@ -194,11 +194,10 @@ graph LR
     2("<div style='font-weight: bold; color: #ffffff;'>Photo_platform</div><div style='font-size: 70%; margin-top: 0px; color: #ffffff;'>[Software System]</div>")
     style 2 fill:#1168bd,stroke:#0b4884,color:#ffffff
 
-    13-. "<div style='color: #ffffff;'>Предоставляет фотографии</div><div style='font-size: 70%'></div>" .->2
-    2-. "<div style='color: #ffffff;'>Загружает фотографии в<br />хранилище</div><div style='font-size: 70%'></div>" .->13
-    1-. "<div style='color: #ffffff;'>Просматривает данные</div><div style='font-size: 70%'></div>" .->2
+    13-- "<div style='color: #ffffff;'>Предоставляет фотографии</div><div style='font-size: 70%'></div>" -->2
+    2-- "<div style='color: #ffffff;'>Загружает фотографии в<br />хранилище</div><div style='font-size: 70%'></div>" -->13
+    1-- "<div style='color: #ffffff;'>Просматривает данные</div><div style='font-size: 70%'></div>" -->2
   end
-
 ```
 
 #### Уровень контейнеров
@@ -226,14 +225,13 @@ graph LR
       style 6 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
-    3-. "<div style='color: #ffffff;'>Передает данные</div><div style='font-size: 70%'></div>" .->6
-    6-. "<div style='color: #ffffff;'>Сохраняет данные индексации</div><div style='font-size: 70%'></div>" .->11
-    13-. "<div style='color: #ffffff;'>Предоставляет фотографии</div><div style='font-size: 70%'></div>" .->3
-    6-. "<div style='color: #ffffff;'>Отображение фотографий</div><div style='font-size: 70%'></div>" .->3
-    6-. "<div style='color: #ffffff;'>Загружает фотографии в<br />хранилище</div><div style='font-size: 70%'></div>" .->13
-    1-. "<div style='color: #ffffff;'>Просматривает данные</div><div style='font-size: 70%'></div>" .->3
+    3-- "<div style='color: #ffffff;'>Передает данные</div><div style='font-size: 70%'></div>" -->6
+    6-- "<div style='color: #ffffff;'>Сохраняет данные индексации</div><div style='font-size: 70%'></div>" -->11
+    13-- "<div style='color: #ffffff;'>Предоставляет фотографии</div><div style='font-size: 70%'></div>" -->3
+    6-- "<div style='color: #ffffff;'>Отображение фотографий</div><div style='font-size: 70%'></div>" -->3
+    6-- "<div style='color: #ffffff;'>Загружает фотографии в<br />хранилище</div><div style='font-size: 70%'></div>" -->13
+    1-- "<div style='color: #ffffff;'>Просматривает данные</div><div style='font-size: 70%'></div>" -->3
   end
-
 ```
 
 #### Компонентный уровень
@@ -261,16 +259,15 @@ graph BT
       style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
     end
 
-    13-. "<div style='color: #ffffff;'>Предоставляет фотографии</div><div style='font-size: 70%'></div>" .->3
-    3-. "<div style='color: #ffffff;'>Запрос на получение<br />пользователя</div><div style='font-size: 70%'></div>" .->7
-    7-. "<div style='color: #ffffff;'>Получение и обновления<br />информации о пользователе</div><div style='font-size: 70%'></div>" .->8
-    8-. "<div style='color: #ffffff;'>Получение информации о<br />фотографиях пользователя</div><div style='font-size: 70%'></div>" .->9
-    3-. "<div style='color: #ffffff;'>Запрос на отображение фото</div><div style='font-size: 70%'></div>" .->9
-    9-. "<div style='color: #ffffff;'>Отображение фотографий</div><div style='font-size: 70%'></div>" .->3
-    9-. "<div style='color: #ffffff;'>Загружает фотографии в<br />хранилище</div><div style='font-size: 70%'></div>" .->13
-    9-. "<div style='color: #ffffff;'>Получает данные о<br />пользователе, который<br />загружает фотографию</div><div style='font-size: 70%'></div>" .->8
+    13-- "<div style='color: #ffffff;'>Предоставляет фотографии</div><div style='font-size: 70%'></div>" -->3
+    3-- "<div style='color: #ffffff;'>Запрос на получение<br />пользователя</div><div style='font-size: 70%'></div>" -->7
+    7-- "<div style='color: #ffffff;'>Получение и обновления<br />информации о пользователе</div><div style='font-size: 70%'></div>" -->8
+    8-- "<div style='color: #ffffff;'>Получение информации о<br />фотографиях пользователя</div><div style='font-size: 70%'></div>" -->9
+    3-- "<div style='color: #ffffff;'>Запрос на отображение фото</div><div style='font-size: 70%'></div>" -->9
+    9-- "<div style='color: #ffffff;'>Отображение фотографий</div><div style='font-size: 70%'></div>" -->3
+    9-- "<div style='color: #ffffff;'>Загружает фотографии в<br />хранилище</div><div style='font-size: 70%'></div>" -->13
+    9-- "<div style='color: #ffffff;'>Получает данные о<br />пользователе, который<br />загружает фотографию</div><div style='font-size: 70%'></div>" -->8
   end
-
 ```
 
 ## 3. ER-диаграмма
