@@ -14,6 +14,8 @@ tags:
     description: "Все, связанное с регистрацией и авторизацией"
   - name: likes
     description: "Все, связанное с лайками" 
+  - name: friends
+    description: "Все, связанное с друзьями"
 paths:
   /api/v1/auth/register:
     post:
@@ -92,11 +94,13 @@ paths:
         - users  
       summary: Получение пользователя по ID
       parameters:
-        - in: path
-          name: userId
-          required: true
+        - name: userId
+          description: "Идентификатор пользователя"
           schema:
             type: string
+          in: path
+          required: true
+          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
       responses:
         '200':
           description: Информация о пользователе
@@ -106,40 +110,18 @@ paths:
                 $ref: '#/components/schemas/User'
         '404':
           description: Пользователь не найден
-    delete:
-      tags:
-        - users 
-      summary: Удалить друга
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userId:
-                  type: integer
-      responses:
-        '204':
-          description: Друг успешно удален
-        '404':
-          description: Пользователь или друг не найден
     patch:
       tags:
         - users 
       summary: Обновить данные пользователя
       parameters:
         - name: userId
+          description: "Идентификатор пользователя"
+          schema:
+            type: string
           in: path
           required: true
-          schema:
-            type: integer
+          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
       requestBody:
         content:
           application/json:
@@ -151,7 +133,6 @@ paths:
         '400':
           description: Ошибка валидации данных
 
-  # Photo Service
   /api/v1/photos:
     post:
       tags:
@@ -184,10 +165,12 @@ paths:
       summary: Получить информацию о фотографии
       parameters:
         - name: photoId
+          description: "Идентификатор пользователя"
+          schema:
+            type: string
           in: path
           required: true
-          schema:
-            type: integer
+          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
       responses:
         '200':
           description: Фотография успешно получена
@@ -204,10 +187,12 @@ paths:
       summary: Обновить фотографию
       parameters:
         - name: photoId
+          description: "Идентификатор пользователя"
+          schema:
+            type: string
           in: path
           required: true
-          schema:
-            type: integer
+          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
       requestBody:
         content:
           application/json:
@@ -225,10 +210,12 @@ paths:
       summary: Удалить фотографию
       parameters:
         - name: photoId
+          description: "Идентификатор пользователя"
+          schema:
+            type: string
           in: path
           required: true
-          schema:
-            type: integer
+          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
       responses:
         '204':
           description: Фотография успешно удалена
@@ -276,7 +263,7 @@ paths:
   /api/v1/likes/{photoId}:
     get:
       tags:
-        - users    
+        - likes    
       summary: Получение всех пользователей
       responses:
         '200':
@@ -290,8 +277,17 @@ paths:
 
   /api/v1/friends:
     get:
+      tags:
+        - friends
       summary: Получить список друзей пользователя
       parameters:
+        - name: userId
+          description: "Идентификатор пользователя"
+          schema:
+            type: string
+          in: path
+          required: true
+          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
         - name: page
           in: query
           description: Номер страницы (по умолчанию 1)
@@ -304,26 +300,22 @@ paths:
           schema:
             type: integer
             default: 10
+            minimum: 1
       responses:
         '200':
           description: Успешное получение списка друзей
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  friends:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Friend'
-                  page:
-                    type: integer
-                  totalPages:
-                    type: integer
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
         '401':
           description: Пользователь не авторизован
 
     post:
+      tags:
+        - friends
       summary: Добавить друга
       requestBody:
         required: true
@@ -345,6 +337,8 @@ paths:
 
   /api/v1/friends/{friendId}:
     delete:
+      tags:
+        - friends
       summary: Удалить друга
       parameters:
         - name: friendId
@@ -357,7 +351,6 @@ paths:
           description: Друг успешно удален
         '404':
           description: Пользователь или друг не найден
-
 
 components:
   schemas:
@@ -401,17 +394,3 @@ components:
             longitude:
               type: number
               format: float
-
-    Friend:
-      type: object
-      properties:
-        id:
-          type: integer
-        username:
-          type: string
-        email:
-          type: string
-        addedAt:
-          type: string
-          format: date-time
-          description: Дата, когда пользователь был добавлен в друзья
