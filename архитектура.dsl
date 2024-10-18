@@ -29,6 +29,7 @@ workspace {
         authService -> userProfileService "Получение и обновления информации о пользователе"
         userProfileService -> photoService "Получение информации о фотографиях пользователя"
         frontend -> photoService "Запрос на отображение фото"
+
         photoService -> frontend "Отображение фотографий"
         photoService -> MinIO "Загружает фотографии в хранилище"
         photoService -> userProfileService "Получает данные о пользователе, который загружает фотографию"
@@ -41,7 +42,6 @@ workspace {
         frontend -> friendService "Запрос на управление друзьями"
         friendService -> userProfileService "Получение и обновление данных о друзьях"
 
-        // Кэширование с помощью Redis
         userProfileService -> redisCache "Кэширование информации о пользователе"
         photoService -> redisCache "Кэширование фотографий"
         likeService -> redisCache "Кэширование данных о лайках"
