@@ -3,6 +3,9 @@ info:
   title: Photo Catalog API
   version: 1.0.0
   description: API для управления каталогом фотографий пользователей.
+  contact:
+    name: SberTech Team
+    email: support@sbertech.ru
 servers:
   - url: http://localhost:3000
 tags:
@@ -22,6 +25,8 @@ paths:
       tags:
         - auth
       summary: Регистрация пользователя
+      description: Регистрация нового пользователя в системе
+      operationId: registerUser
       requestBody:
         required: true
         content:
@@ -52,6 +57,8 @@ paths:
       tags:
         - auth      
       summary: Авторизация пользователя
+      description: Авторизация пользователя по логину и паролю
+      operationId: loginUser
       requestBody:
         required: true
         content:
@@ -69,18 +76,382 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
+                $ref: '#/components/schemas/AuthResponse'
         '401':
           description: Неверные учетные данные
+
+  /api/v1/auth/oauth/keycloak/url:
+    post:
+      tags:
+        - auth
+      summary: Получить URL для OAuth2 авторизации через Keycloak
+      description: Генерирует URL для редиректа на Keycloak OAuth2
+      operationId: getKeycloakUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                redirect_uri:
+                  type: string
+                  description: URL для возврата после авторизации
+      responses:
+        '200':
+          description: URL для редиректа получен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authorization_url:
+                    type: string
+                    description: URL для редиректа на Keycloak
+
+  /api/v1/auth/oauth/keycloak/callback:
+    post:
+      tags:
+        - auth
+      summary: Обработка callback от Keycloak OAuth2
+      description: Обрабатывает callback от Keycloak и возвращает JWT токены
+      operationId: keycloakCallback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Authorization code от Keycloak
+                state:
+                  type: string
+                  description: State параметр для CSRF защиты
+      responses:
+        '200':
+          description: Успешная авторизация через Keycloak
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Неверный код авторизации
+        '401':
+          description: Ошибка авторизации в Keycloak
+
+  /api/v1/auth/magic-link:
+    post:
+      tags:
+        - auth
+      summary: Запрос Magic Link для входа без пароля
+      description: Отправляет Magic Link на указанный email
+      operationId: requestMagicLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email для отправки Magic Link
+      responses:
+        '200':
+          description: Magic Link отправлен на email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Magic Link отправлен на указанный email"
+                  expires_in:
+                    type: integer
+                    description: Время жизни ссылки в секундах
+                    example: 300
+        '400':
+          description: Неверный формат email
+        '429':
+          description: Слишком много запросов
+
+  /api/v1/auth/magic-link/verify:
+    post:
+      tags:
+        - auth
+      summary: Верификация Magic Link кода
+      description: Проверяет 6-значный код из email и авторизует пользователя
+      operationId: verifyMagicLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+                  pattern: "^[0-9]{6}$"
+                  description: 6-значный код из email
+      responses:
+        '200':
+          description: Успешная верификация Magic Link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Неверный код или email
+        '401':
+          description: Срок действия кода истек
+        '429':
+          description: Превышено количество попыток
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Обновление access токена через refresh токен
+      description: Обновляет access токен с помощью refresh токена
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh токен
+      responses:
+        '200':
+          description: Токен успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверный или просроченный refresh токен
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Выход из системы (текущее устройство)
+      description: Выход пользователя из системы на текущем устройстве
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh токен для инвалидации
+      responses:
+        '200':
+          description: Успешный выход
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Вы успешно вышли из системы"
+
+  /api/v1/auth/logout-all:
+    delete:
+      tags:
+        - auth
+      summary: Выход из системы на всех устройствах
+      description: Выход пользователя из системы на всех устройствах
+      operationId: logoutAll
+      responses:
+        '200':
+          description: Успешный выход на всех устройствах
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Вы успешно вышли из системы на всех устройствах"
+
+  /api/v1/auth/me:
+    get:
+      tags:
+        - auth
+      summary: Получение информации о текущем пользователе
+      description: Возвращает профиль текущего авторизованного пользователя
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Пользователь не авторизован
+
+  /api/v1/auth/2fa/enable:
+    post:
+      tags:
+        - auth
+      summary: Включение двухфакторной аутентификации
+      description: Включает 2FA для пользователя и генерирует QR код
+      operationId: enable2FA
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  description: Текущий пароль для подтверждения
+      responses:
+        '200':
+          description: 2FA успешно включена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  qr_code:
+                    type: string
+                    description: Base64 encoded QR code
+                  backup_codes:
+                    type: array
+                    items:
+                      type: string
+                    description: Резервные коды
+        '400':
+          description: Неверный пароль
+
+  /api/v1/auth/2fa/disable:
+    post:
+      tags:
+        - auth
+      summary: Отключение двухфакторной аутентификации
+      description: Отключает 2FA для пользователя
+      operationId: disable2FA
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                totp_code:
+                  type: string
+                  pattern: "^[0-9]{6}$"
+      responses:
+        '200':
+          description: 2FA успешно отключена
+        '400':
+          description: Неверный пароль или TOTP код
+
+  /api/v1/auth/oauth/accounts:
+    get:
+      tags:
+        - auth
+      summary: Получение списка привязанных OAuth2 аккаунтов
+      description: Возвращает список всех привязанных OAuth2 аккаунтов пользователя
+      operationId: getOAuthAccounts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список привязанных аккаунтов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OAuthAccount'
+
+  /api/v1/auth/oauth/link:
+    post:
+      tags:
+        - auth
+      summary: Привязка OAuth2 аккаунта к текущему профилю
+      description: Привязывает OAuth2 аккаунт к текущему профилю пользователя
+      operationId: linkOAuthAccount
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum: [keycloak]
+                authorization_code:
+                  type: string
+      responses:
+        '200':
+          description: Аккаунт успешно привязан
+        '400':
+          description: Ошибка привязки аккаунта
+
+  /api/v1/auth/oauth/unlink:
+    delete:
+      tags:
+        - auth
+      summary: Отвязка OAuth2 аккаунта
+      description: Отвязывает OAuth2 аккаунт от профиля пользователя
+      operationId: unlinkOAuthAccount
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum: [keycloak]
+                provider_user_id:
+                  type: string
+      responses:
+        '200':
+          description: Аккаунт успешно отвязан
+        '400':
+          description: Нельзя отвязать единственный способ входа
 
   /api/v1/users:
     get:
       tags:
         - users    
       summary: Получение всех пользователей
+      operationId: getAllUsers
       responses:
         '200':
           description: Список пользователей
@@ -96,6 +467,7 @@ paths:
       tags:
         - users  
       summary: Получение пользователя по ID
+      operationId: getUserById
       parameters:
         - name: userId
           description: "Идентификатор пользователя"
@@ -117,6 +489,7 @@ paths:
       tags:
         - users 
       summary: Обновить данные пользователя
+      operationId: updateUser
       parameters:
         - name: userId
           description: "Идентификатор пользователя"
@@ -141,6 +514,7 @@ paths:
       tags:
         - photo
       summary: Загрузить новую фотографию
+      operationId: uploadPhoto
       requestBody:
         content:
           multipart/form-data:
@@ -166,9 +540,10 @@ paths:
       tags:
         - photo
       summary: Получить информацию о фотографии
+      operationId: getPhoto
       parameters:
         - name: photoId
-          description: "Идентификатор пользователя"
+          description: "Идентификатор фотографии"
           schema:
             type: string
           in: path
@@ -183,14 +558,14 @@ paths:
                 $ref: '#/components/schemas/Photo'
         '404':
           description: Фотография не найдена
-
     put:
       tags:
         - photo
       summary: Обновить фотографию
+      operationId: updatePhoto
       parameters:
         - name: photoId
-          description: "Идентификатор пользователя"
+          description: "Идентификатор фотографии"
           schema:
             type: string
           in: path
@@ -206,14 +581,14 @@ paths:
           description: Фотография успешно обновлена
         '404':
           description: Фотография не найдена
-
     delete:
       tags:
         - photo
       summary: Удалить фотографию
+      operationId: deletePhoto
       parameters:
         - name: photoId
-          description: "Идентификатор пользователя"
+          description: "Идентификатор фотографии"
           schema:
             type: string
           in: path
@@ -230,6 +605,7 @@ paths:
       tags:
         - likes
       summary: Лайкнуть фотографию (доступно только для фотографий друзей)
+      operationId: likePhoto
       requestBody:
         required: true
         content:
@@ -244,11 +620,11 @@ paths:
           description: Фотография успешно лайкнута
         '400':
           description: Ошибка невозможно лайкнуть свою фотографию или не из списка друзей
-
     delete:
       tags:
         - likes
       summary: Убрать лайк (доступно только для фотографий друзей)
+      operationId: unlikePhoto
       requestBody:
         required: true
         content:
@@ -267,7 +643,16 @@ paths:
     get:
       tags:
         - likes    
-      summary: Получение всех пользователей
+      summary: Получение всех пользователей, лайкнувших фотографию
+      operationId: getPhotoLikes
+      parameters:
+        - name: photoId
+          description: "Идентификатор фотографии"
+          schema:
+            type: string
+          in: path
+          required: true
+          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
       responses:
         '200':
           description: Список пользователей
@@ -282,15 +667,12 @@ paths:
     get:
       tags:
         - friends
-      summary: Получить список друзей пользователя
+      summary: Получить список друзей текущего пользователя
+      description: Возвращает список друзей текущего авторизованного пользователя
+      operationId: getFriends
+      security:
+        - bearerAuth: []
       parameters:
-        - name: userId
-          description: "Идентификатор пользователя"
-          schema:
-            type: string
-          in: path
-          required: true
-          example: "4:15a90cb6-19b0-46f4-67dd-271556777f24:1746"
         - name: page
           in: query
           description: Номер страницы (по умолчанию 1)
@@ -315,11 +697,11 @@ paths:
                   $ref: '#/components/schemas/User'
         '401':
           description: Пользователь не авторизован
-
     post:
       tags:
         - friends
       summary: Добавить друга
+      operationId: addFriend
       requestBody:
         required: true
         content:
@@ -343,6 +725,7 @@ paths:
       tags:
         - friends
       summary: Удалить друга
+      operationId: removeFriend
       parameters:
         - name: friendId
           in: path
@@ -356,6 +739,12 @@ paths:
           description: Пользователь или друг не найден
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     User:
       type: object
@@ -374,6 +763,7 @@ components:
           type: string
         email:
           type: string
+
     PhotoUpdate:
       type: object
       properties:
@@ -381,6 +771,7 @@ components:
           type: string
         location:
           type: string     
+
     Photo:
       type: object
       properties:
@@ -397,3 +788,72 @@ components:
             longitude:
               type: number
               format: float
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access токен
+        refresh_token:
+          type: string
+          description: Refresh токен
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Время жизни access токена в секундах
+          example: 900
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        email_verified:
+          type: boolean
+        avatar_url:
+          type: string
+          format: uri
+        totp_enabled:
+          type: boolean
+        last_login:
+          type: string
+          format: date-time
+        login_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    OAuthAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        provider:
+          type: string
+          enum: [keycloak]
+        realm:
+          type: string
+          example: "sberTech"
+        provider_user_id:
+          type: string
+        email:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
